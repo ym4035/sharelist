@@ -1,8 +1,6 @@
 const fs = require('fs')
 const yaml = require('yaml')
-const http = require('../utils/http')
 const base = require('../utils/base')
-const cache = require('../utils/cache')
 const config = require('../config')
 const format = require('../utils/format')
 const { getDrive, getAuth, getStream , getSource, updateLnk, checkAuthority, updateFile, updateFolder , getPreview , isPreviewable , command } = require('./plugin')

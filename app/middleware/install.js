@@ -1,7 +1,6 @@
-const config = require('../config')
 
-module.exports = async (ctx , next)=>{
-  if(config.installed()){
+module.exports = (options, app) => async (ctx , next) => {
+  if(app.config.token){
     await next()
   }else{
     if( ctx.path != '/install'){

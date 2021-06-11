@@ -7,8 +7,6 @@ const pug = require('pug')
 const mime = require('mime')
 const crypto = require('crypto')
 
-const { getConfig , setConfig } = require('../config')
-
 const options = {
   theme:'default',
   dir:'',
@@ -21,12 +19,17 @@ const bootTime = Date.now()
 const render = (ctx, filename , locals = {}) => {
   const state = Object.assign(locals, ctx.state || {})
   pug.renderFile(filename , state, (err, html) => {
-    ctx.type = 'text/html'
-    ctx.body = html
+    if(err){
+      console.log(err)
+      ctx.body = err
+    }else{
+      ctx.type = 'text/html'
+      ctx.body = html
+    }
   })
 }
 
-const renderMiddleware = ({ dir }) => (ctx, next) => {
+const renderMiddleware = ({ dir , app }) => (ctx, next) => {
   if(ctx.renderSkin) return next()
   ctx.response.renderSkin = ctx.renderSkin = (relPath , extra = {}) => {
     let data = { 
@@ -34,8 +37,8 @@ const renderMiddleware = ({ dir }) => (ctx, next) => {
       __path__:dir,
       __timestamp__:bootTime,
       g_config:{
-        custom_style:getConfig('custom_style'),
-        custom_script:getConfig('custom_script'),
+        custom_style:app.config.custom_style,
+        custom_script:app.config.custom_script,
       }
     }
     return render(ctx, path.resolve(dir, options.theme, 'view',relPath+'.pug') , data)
@@ -88,7 +91,7 @@ const staticCacheMiddleware = ({maxage , dir}) => staticCache(dir, {maxage, prel
 })
 
 const themeManager = (app , { dir } = {}) => {
-  options.theme = getConfig('theme') || 'default'
+  options.theme = app.config.theme || 'default'
   options.dir = dir
 
   let dest = os.tmpdir() + '/sharelist'
@@ -105,31 +108,30 @@ const themeManager = (app , { dir } = {}) => {
     }
   }))
 
-  app.use(renderMiddleware({ dir }))
+  app.use(renderMiddleware({ dir , app }))
 
   app.use(staticCacheMiddleware({ dir, maxage : 30 * 24 * 60 * 60}))
 
-}
-
-themeManager.getTheme = (theme) => {
-  return options.theme
-}
-
-themeManager.setTheme = (theme) => {
-  if( theme && options.theme != theme ){
-    options.theme = theme
-    setConfig({theme})
+  return {
+    getTheme:() => {
+      return options.theme
+    },
+    setTheme:(theme) => {
+      if( theme && options.theme != theme ){
+        options.theme = theme
+        app.config.theme = theme
+      }
+    },
+    getThemes:() => {
+      let ret = []
+      try{
+        const files = fs.readdirSync(options.dir)
+        return files
+      }catch(e){}
+      
+      return ret
+    }
   }
-}
-
-themeManager.getThemes = (theme) => {
-  let ret = []
-  try{
-    const files = fs.readdirSync(options.dir)
-    return files
-  }catch(e){}
-  
-  return ret
 }
 
 module.exports = themeManager

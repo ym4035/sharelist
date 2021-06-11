@@ -1,10 +1,5 @@
-const base = require('../utils/base')
 const request = require('request')
-const config = require('../config')
-const cache = require('../utils/cache')
-const { getVendors , reload } = require('../services/plugin')
-const service = require('../services/sharelist')
-const themeManager = require('../services/theme')
+
 
 /**
  * Hanlders hub
@@ -31,7 +26,8 @@ const handlers = async (a, body , ctx) => {
     let result = { status: 0, message: '' }
 
     if (path) {
-      await config.save({ path })
+      app.config.path = path
+      // await config.save({ path })
       result.message = 'Success'
     } else {
       result.message = 'Invalid Arguments'
@@ -57,7 +53,7 @@ const handlers = async (a, body , ctx) => {
       result.message = 'Invalid password'
     }
   } else if(a == 'reboot'){
-    reload()
+    this.service.plugin.reload()
     result.message = 'Success'
   }
   else if(a == 'signout'){
@@ -162,7 +158,7 @@ const handlers = async (a, body , ctx) => {
     opts.theme = theme
 
     if( theme ){
-      themeManager.setTheme( theme )
+      this.app.theme.setTheme( theme )
     }
     await config.save(opts)
     result.message = 'Success'
@@ -177,19 +173,19 @@ module.exports = {
    * Manage page index handler
    */
   async home(ctx, next) {
-
     let token = ctx.request.body.token
     let act = ctx.query.a
     let message, access = !!ctx.session.admin
 
     if (access) {
       if (act == 'export') {
-        ctx.body = JSON.stringify(config.getAllConfig())
+        ctx.body = JSON.stringify(this.app.config)
       } else {
-        let newConfig = Object.assign(config.getAllConfig() , { themes: themeManager.getThemes() })
-        await ctx.renderSkin('manage', { access, message, config: newConfig, vendors: getVendors() })
+        let newConfig = Object.assign(config , { themes: this.app.theme.getThemes() })
+        await ctx.renderSkin('manage', { access, message, config: newConfig, vendors: this.service.plugin.getVendors() })
       }
     } else {
+      console.log('>>>',access)
       await ctx.renderSkin('manage', { access })
     }
 
@@ -268,7 +264,7 @@ module.exports = {
     let body = ctx.request.body
     let { command , path = '/' } = body
     if(command){
-      let ret = await service.exec(command , path)
+      let ret = await this.service.exec(command , path)
       ctx.body = ret
     }
   }

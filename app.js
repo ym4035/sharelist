@@ -15,10 +15,10 @@ if(!fs.existsSync('./cache')){
 
 var port = normalizePort(config.getConfig('port') || 33001);
 
+
 var server = http.createServer(app.callback());
-
-
-server.listen(port);
+console.log('PORT',app.config.port)
+server.listen(app.config.port);
 server.on('error', onError);
 server.on('listening', onListening);
 

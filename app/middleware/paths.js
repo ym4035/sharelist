@@ -56,7 +56,9 @@ const parseConfig = (str) => {
   }
   return ret
 }
-module.exports = async(ctx, next) => {
+
+module.exports = (options, app) => async(ctx, next) => {
+  console.log(ctx.session)
   if (!ctx.session.access) {
     ctx.session.access = new Set()
   }

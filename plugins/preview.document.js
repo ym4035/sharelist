@@ -51,6 +51,23 @@ module.exports = ({ getSource , getConfig, request }) => {
 
 
   const office = async (data, req) => {
+    if( req.query.proxy ){
+      return {
+        ...data,
+        convertible:true,
+        outputType:'stream',
+        body:request({url:createUrl(req , true)})
+      }
+    }
+    let url = createUrl(req , false , { preview:1, proxy : 1 })
+    let body = `<iframe src="https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(url)}"></iframe>`
+    return {
+      ...data,
+      body
+    }
+
+    
+    /*
     if( req.query.conv && fileMap[req.path]){
       let url = fileMap[req.path]
       delete fileMap[req.path]
@@ -92,7 +109,7 @@ module.exports = ({ getSource , getConfig, request }) => {
         convertible:true,
         body:'无法预览'
       }
-    }
+    }*/
     
   }
 
